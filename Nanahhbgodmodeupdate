@@ -1,0 +1,228 @@
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Xóa GUI cũ khi chạy lại script
+local old = playerGui:FindFirstChild("NanahhbGodMode")
+if old then
+    old:Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "NanahhbGodMode"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 999
+gui.Parent = playerGui
+
+local gold = Color3.fromRGB(255, 195, 35)
+local dark = Color3.fromRGB(95, 60, 10)
+local green = Color3.fromRGB(100, 220, 120)
+
+local function round(obj)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = obj
+end
+
+local function makeButton(parent, text, size, pos)
+    local b = Instance.new("TextButton")
+    b.Size = size
+    b.Position = pos
+    b.BackgroundColor3 = gold
+    b.TextColor3 = dark
+    b.Text = text
+    b.TextSize = 15
+    b.Font = Enum.Font.GothamBold
+    b.Active = true
+    b.AutoButtonColor = true
+    b.Parent = parent
+    round(b)
+    return b
+end
+
+-- Nút MENU luôn tồn tại bên ngoài khung
+local menuBtn = makeButton(
+    gui, "MENU: ON",
+    UDim2.fromOffset(82, 65),
+    UDim2.new(0, 20, 0.4, 0)
+)
+
+-- Khung chính
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(230, 155)
+frame.Position = UDim2.new(0.5, -115, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(255, 230, 160)
+frame.Active = true
+frame.Visible = true
+frame.Parent = gui
+round(frame)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "Nanahhb"
+title.TextColor3 = dark
+title.TextSize = 24
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local godBtn = makeButton(
+    frame, "GODMODE: OFF",
+    UDim2.new(1, -20, 0, 42),
+    UDim2.new(0, 10, 0, 52)
+)
+
+local hideBtn = makeButton(
+    frame, "HIDE MENU",
+    UDim2.new(1, -20, 0, 32),
+    UDim2.new(0, 10, 0, 105)
+)
+hideBtn.TextSize = 13
+
+-- Đồng bộ chữ MENU với trạng thái khung
+local function updateMenu()
+    menuBtn.Text = frame.Visible and "MENU: ON" or "MENU: OFF"
+end
+
+menuBtn.Activated:Connect(function()
+    frame.Visible = not frame.Visible
+    updateMenu()
+end)
+
+hideBtn.Activated:Connect(function()
+    frame.Visible = false
+    updateMenu()
+end)
+
+-- Kéo nút MENU bằng cảm ứng/chuột
+local dragging = false
+local moved = false
+local startInput
+local startPos
+local startPointer
+
+menuBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        moved = false
+        startInput = input
+        startPos = menuBtn.Position
+        startPointer = input.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if not dragging then return end
+
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - startPointer
+
+        if delta.Magnitude > 8 then
+            moved = true
+        end
+
+        if moved then
+            menuBtn.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input == startInput
+        or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Kéo khung bằng chuột hoặc cảm ứng
+local frameDragging = false
+local frameStart
+local framePosition
+
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        frameDragging = true
+        frameStart = input.Position
+        framePosition = frame.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if not frameDragging then return end
+
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - frameStart
+        frame.Position = UDim2.new(
+            framePosition.X.Scale,
+            framePosition.X.Offset + delta.X,
+            framePosition.Y.Scale,
+            framePosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        frameDragging = false
+    end
+end)
+
+-- GODMODE thử nghiệm: phục hồi máu phía client
+local enabled = false
+local healthConnection
+local characterConnection
+
+local function setGodMode(state)
+    enabled = state
+
+    if healthConnection then
+        healthConnection:Disconnect()
+        healthConnection = nil
+    end
+
+    local character = player.Character
+    local humanoid = character
+        and character:FindFirstChildOfClass("Humanoid")
+
+    if enabled and humanoid then
+        godBtn.Text = "GODMODE: ON"
+        godBtn.BackgroundColor3 = green
+
+        healthConnection = humanoid.HealthChanged:Connect(function(health)
+            if enabled and humanoid.Parent
+                and health > 0
+                and health < humanoid.MaxHealth then
+                humanoid.Health = humanoid.MaxHealth
+            end
+        end)
+    else
+        godBtn.Text = "GODMODE: OFF"
+        godBtn.BackgroundColor3 = gold
+    end
+end
+
+godBtn.Activated:Connect(function()
+    setGodMode(not enabled)
+end)
+
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if enabled then
+        setGodMode(true)
+    end
+end)
+
+updateMenu()
