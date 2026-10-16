@@ -1,0 +1,146 @@
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "NanahhbGodMode"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 999
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local gold = Color3.fromRGB(255, 195, 35)
+local dark = Color3.fromRGB(95, 60, 10)
+
+local function round(obj)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 5)
+    c.Parent = obj
+end
+
+local function makeButton(parent, text, size, pos)
+    local b = Instance.new("TextButton")
+    b.Size = size
+    b.Position = pos
+    b.BackgroundColor3 = gold
+    b.TextColor3 = dark
+    b.Text = text
+    b.TextSize = 16
+    b.Font = Enum.Font.GothamBold
+    b.Active = true
+    b.Parent = parent
+    round(b)
+    return b
+end
+
+-- Nút MENU nổi
+local menuBtn = makeButton(
+    gui, "MENU: ON",
+    UDim2.fromOffset(70, 65),
+    UDim2.new(0, 20, 0.4, 0)
+)
+menuBtn.Draggable = true
+
+-- Khung menu
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(230, 155)
+frame.Position = UDim2.new(0.5, -115, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(255, 230, 160)
+frame.Active = true
+frame.Draggable = true
+frame.Visible = true
+frame.Parent = gui
+round(frame)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "Nanahhb"
+title.TextColor3 = dark
+title.TextSize = 24
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local godBtn = makeButton(
+    frame, "GODMODE: OFF",
+    UDim2.new(1, -20, 0, 42),
+    UDim2.new(0, 10, 0, 52)
+)
+
+local hideBtn = makeButton(
+    frame, "HIDE MENU",
+    UDim2.new(1, -20, 0, 32),
+    UDim2.new(0, 10, 0, 105)
+)
+hideBtn.TextSize = 13
+
+-- MENU ON/OFF
+local function updateMenuButton()
+    menuBtn.Text = frame.Visible and "MENU: ON" or "MENU: OFF"
+end
+
+menuBtn.Activated:Connect(function()
+    frame.Visible = not frame.Visible
+    updateMenuButton()
+end)
+
+hideBtn.Activated:Connect(function()
+    frame.Visible = false
+    updateMenuButton()
+end)
+
+-- GODMODE: thử phục hồi máu phía client
+local enabled = false
+local healthConnection
+local currentHumanoid
+local generation = 0
+
+local function setGodMode(state)
+    enabled = state
+    generation += 1
+    local thisGeneration = generation
+
+    if healthConnection then
+        healthConnection:Disconnect()
+        healthConnection = nil
+    end
+
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    currentHumanoid = hum
+
+    if enabled and hum then
+        godBtn.Text = "GODMODE: ON"
+        godBtn.BackgroundColor3 = Color3.fromRGB(100, 230, 130)
+
+        healthConnection = hum.HealthChanged:Connect(function(health)
+            if enabled
+                and thisGeneration == generation
+                and hum.Parent
+                and health > 0
+                and health < hum.MaxHealth then
+                hum.Health = hum.MaxHealth
+            end
+        end)
+    else
+        godBtn.Text = "GODMODE: OFF"
+        godBtn.BackgroundColor3 = gold
+    end
+end
+
+godBtn.Activated:Connect(function()
+    setGodMode(not enabled)
+end)
+
+player.CharacterAdded:Connect(function(character)
+    task.wait(1)
+
+    if player.Character ~= character then
+        return
+    end
+
+    if enabled then
+        setGodMode(true)
+    end
+end)
+
+updateMenuButton()
