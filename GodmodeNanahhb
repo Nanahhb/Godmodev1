@@ -1,0 +1,114 @@
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "GodModeMenu"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local function makeButton(parent, text, size, pos, color)
+    local b = Instance.new("TextButton")
+    b.Size = size
+    b.Position = pos
+    b.BackgroundColor3 = color
+    b.Text = text
+    b.TextColor3 = Color3.fromRGB(80, 50, 10)
+    b.TextSize = 16
+    b.Font = Enum.Font.GothamBold
+    b.Parent = parent
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 10)
+    c.Parent = b
+    return b
+end
+
+local gold = Color3.fromRGB(255, 220, 145)
+
+-- Nút mở / ẩn menu
+local open = makeButton(
+    gui, "🛡 GOD", UDim2.fromOffset(95, 42),
+    UDim2.new(0, 20, 0.4, 0), gold
+)
+open.Active = true
+open.Draggable = true
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(225, 135)
+frame.Position = UDim2.new(0, 125, 0.4, 0)
+frame.BackgroundColor3 = gold
+frame.Active = true
+frame.Draggable = true
+frame.Visible = false
+frame.Parent = gui
+
+Instance.new("UICorner", frame).CornerRadius =
+    UDim.new(0, 12)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 42)
+title.BackgroundTransparency = 1
+title.Text = "🛡 GODMODE"
+title.TextColor3 = Color3.fromRGB(80, 50, 10)
+title.TextSize = 20
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local toggle = makeButton(
+    frame, "GODMODE: OFF",
+    UDim2.new(1, -20, 0, 42),
+    UDim2.new(0, 10, 0, 48),
+    Color3.fromRGB(230, 180, 80)
+)
+
+local close = makeButton(
+    frame, "ẨN MENU",
+    UDim2.new(1, -20, 0, 28),
+    UDim2.new(0, 10, 0, 96),
+    Color3.fromRGB(255, 235, 195)
+)
+close.TextSize = 13
+
+open.Activated:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+close.Activated:Connect(function()
+    frame.Visible = false
+end)
+
+local enabled = false
+
+local function applyForceField()
+    local character = player.Character
+    if not character then return end
+
+    local ff = character:FindFirstChild("GodModeForceField")
+
+    if enabled then
+        if not ff then
+            ff = Instance.new("ForceField")
+            ff.Name = "GodModeForceField"
+            ff.Parent = character
+        end
+        toggle.Text = "GODMODE: ON"
+        toggle.BackgroundColor3 =
+            Color3.fromRGB(100, 230, 130)
+    else
+        if ff then ff:Destroy() end
+        toggle.Text = "GODMODE: OFF"
+        toggle.BackgroundColor3 =
+            Color3.fromRGB(230, 180, 80)
+    end
+end
+
+toggle.Activated:Connect(function()
+    enabled = not enabled
+    applyForceField()
+end)
+
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    applyForceField()
+end)
