@@ -1,0 +1,124 @@
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "NanahhbGodMode"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local gold = Color3.fromRGB(255, 195, 35)
+local dark = Color3.fromRGB(95, 60, 10)
+
+local function round(obj)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 5)
+    c.Parent = obj
+end
+
+local function makeButton(parent, text, size, pos)
+    local b = Instance.new("TextButton")
+    b.Size = size
+    b.Position = pos
+    b.BackgroundColor3 = gold
+    b.TextColor3 = dark
+    b.Text = text
+    b.TextSize = 16
+    b.Font = Enum.Font.GothamBold
+    b.Parent = parent
+    round(b)
+    return b
+end
+
+-- Nút vuông mở menu
+local menuBtn = makeButton(
+    gui, "MENU",
+    UDim2.fromOffset(65, 65),
+    UDim2.new(0, 20, 0.4, 0)
+)
+menuBtn.Active = true
+menuBtn.Draggable = true
+
+-- Menu chính
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(230, 155)
+frame.Position = UDim2.new(0.5, -115, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(255, 230, 160)
+frame.Active = true
+frame.Draggable = true
+frame.Visible = false
+frame.Parent = gui
+round(frame)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "Nanahhb"
+title.TextColor3 = dark
+title.TextSize = 24
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local godBtn = makeButton(
+    frame, "GODMODE: OFF",
+    UDim2.new(1, -20, 0, 42),
+    UDim2.new(0, 10, 0, 52)
+)
+
+local hideBtn = makeButton(
+    frame, "HIDE MENU",
+    UDim2.new(1, -20, 0, 32),
+    UDim2.new(0, 10, 0, 105)
+)
+
+menuBtn.Activated:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+hideBtn.Activated:Connect(function()
+    frame.Visible = false
+end)
+
+-- Humanoid Health
+local enabled = false
+local healthConnection
+local currentHumanoid
+
+local function setGodMode(state)
+    enabled = state
+
+    if healthConnection then
+        healthConnection:Disconnect()
+        healthConnection = nil
+    end
+
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    currentHumanoid = hum
+
+    if enabled and hum then
+        healthConnection = hum.HealthChanged:Connect(function(health)
+            if enabled and hum.Parent and health > 0
+                and health < hum.MaxHealth then
+                hum.Health = hum.MaxHealth
+            end
+        end)
+
+        godBtn.Text = "GODMODE: ON"
+        godBtn.BackgroundColor3 = Color3.fromRGB(100, 230, 130)
+    else
+        godBtn.Text = "GODMODE: OFF"
+        godBtn.BackgroundColor3 = gold
+    end
+end
+
+godBtn.Activated:Connect(function()
+    setGodMode(not enabled)
+end)
+
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if enabled then
+        setGodMode(true)
+    end
+end)
